@@ -1,0 +1,7 @@
+Revision history for Perl module POE::Declarative
+
+0.001 Mon Oct 1 21:44:00 2007
+    * Initial release.
+    * Added the POE::Declarative module with get(), call(), delay(), post(),
+      yield(), setup(), on(), and run().
+    * Added some basic tests to get started with.
