@@ -7,7 +7,6 @@ inc/Module/Install/Include.pm
 inc/Module/Install/Makefile.pm
 inc/Module/Install/MakeMaker.pm
 inc/Module/Install/Metadata.pm
-lib/POE/.Declarative.pm.swp
 lib/POE/Declarative.pm
 Makefile.PL
 MANIFEST			This list of files
