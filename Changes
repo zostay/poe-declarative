@@ -1,8 +1,13 @@
 Revision history for Perl module POE::Declarative
 
-0.003 
+0.003 Fri oct 5 13:58:43 2007
     * Fixed the MANIFEST which failed to include t/object-states.t from the
       previous release.
+    * Added a default heap -> {}
+    * Added POE::Declarative::Mixin for additional mixin support.
+    * Added support for multiple states in on().
+    * Added t/mixins.t and related classes in t/lib to test mixin support.
+    * Added t/on-array.t to test multiple states being passed to on().
 
 0.002 Fri Oct 5 11:43:04 2007
     * Switched from using inline_states to package_states or object_states
