@@ -9,7 +9,7 @@ require Exporter;
 our @ISA = qw( Exporter );
 
 use Carp;
-use Scalar::Util qw/ blessed /;
+use Scalar::Util qw/ blessed reftype /;
 
 our @EXPORT = qw(
     call delay post yield
@@ -55,7 +55,9 @@ This module is still B<VERY EXPERIMENTAL>. I just wrote it this evening and it n
 
 =head2 on STATE => CODE
 
-Use the C<on> rule to specify what code to run on a given state. The usual way to say this is:
+=head2 on [ STATE1, STATE2, ... ] => CODE
+
+Use the C<on> rule to specify what code to run on a given state (or states). The usual way to say this is:
 
   on _start => run { ... };
 
@@ -70,6 +72,12 @@ or:
 or:
 
   on _start => \&_start_handler;
+
+You can also specify multiple states for a single subroutine:
+
+  on [ 'say', 'yell', 'whisper' ] => run { ... };
+
+This has the same behavior as setting the same subroutine for each of these individually.
 
 Each state is also placed as a method within the current package. This method will be prefixed with "_poe_declarative_" to keep it from conflicting with any other methdos you've defined. So, you can define:
 
@@ -90,6 +98,25 @@ sub on($$) {
 
     my $package = caller;
     my $states  = _states();
+
+    # Using on [ qw/ x y z / ] => ... syntax
+    if (ref $state and reftype $state eq 'ARRAY') {
+        for my $individual_state (@$state) {
+            _declare_method($package, $individual_state, $code, $states);
+        }
+    }
+
+    # Using on [ x ] => ... syntax
+    else {
+        _declare_method($package, $state, $code, $states);
+    }
+}
+
+sub _declare_method {
+    my $package = shift;
+    my $state   = shift;
+    my $code    = shift;
+    my $states  = shift;
 
     my $method = '_poe_declarative_' . $state;
     $states->{ $state } = $method;
@@ -226,6 +253,7 @@ sub setup {
     if (blessed $package) {
         POE::Session->create(
             object_states => [ $package => _states(blessed $package) ],
+            heap => {},
         );
     }
 
@@ -233,6 +261,7 @@ sub setup {
     else {
         POE::Session->create(
             package_states => [ $package => _states($package) ],
+            heap => {},
         );
     }
 }
