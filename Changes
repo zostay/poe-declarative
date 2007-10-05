@@ -1,5 +1,9 @@
 Revision history for Perl module POE::Declarative
 
+0.003 
+    * Fixed the MANIFEST which failed to include t/object-states.t from the
+      previous release.
+
 0.002 Fri Oct 5 11:43:04 2007
     * Switched from using inline_states to package_states or object_states
       depending on whether a package or object is passed to setup().
