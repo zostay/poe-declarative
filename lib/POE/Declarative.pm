@@ -3,12 +3,13 @@ use warnings;
 
 package POE::Declarative;
 
-our $VERSION = '0.001';
+our $VERSION = '0.002';
 
 require Exporter;
 our @ISA = qw( Exporter );
 
 use Carp;
+use Scalar::Util qw/ blessed /;
 
 our @EXPORT = qw(
     call delay post yield
@@ -70,6 +71,14 @@ or:
 
   on _start => \&_start_handler;
 
+Each state is also placed as a method within the current package. This method will be prefixed with "_poe_declarative_" to keep it from conflicting with any other methdos you've defined. So, you can define:
+
+  sub _start { ... }
+
+  on _start => \&_start;
+
+This will then result in an additional method named "C<_poe_declarative__start>" being added to your package. These method names are then passed as state handlers to the L<POE::Session>.
+
 =cut
 
 sub on($$) {
@@ -81,7 +90,12 @@ sub on($$) {
 
     my $package = caller;
     my $states  = _states();
-    $states->{ $state } = sub { _args($package, @_); $code->(@_) };
+
+    my $method = '_poe_declarative_' . $state;
+    $states->{ $state } = $method;
+
+    no strict 'refs';
+    *{ $package . '::' . $method } = sub { _args($package, @_); $code->(@_) };
 }
 
 =head2 run CODE
@@ -168,7 +182,7 @@ sub yield($;@) {
 
 The setup methods setup your session and such and generally get your session read for the POE kernel to do its thing.
 
-=head2 setup PACKAGE
+=head2 setup [ CLASS ]
 
 Typically, this is called via:
 
@@ -177,6 +191,11 @@ Typically, this is called via:
 If called within the package defining the session, this should DWIM nicely. However, if you call it from outside the package (for example, you have several session packages that are then each set up from a central loader), you can also run:
 
   POE::Declarative->setup('MyPOEApp::Component::FlabbyBo');
+
+And finally, the third form is to pass a blessed reference of that class in, which will become the C<OBJECT> argument to all your states (rather than it just being the name of the class).
+
+  my $flabby_bo = MyPOEApp::Component::FlabbyBo->new;
+  POE::Declarative->setup($flabby_bo);
 
 =cut
 
@@ -193,18 +212,29 @@ sub _states {
     my $package = shift || caller(1);
 
     no strict 'refs';
-    return (${ $package . '::STATES' } ||= {});
+    return scalar (${ $package . '::STATES' } ||= {});
 }
 
 sub setup {
     my $class   = shift;
+
     unshift @_, $class if defined $class and $class ne __PACKAGE__;
 
     my $package = shift || caller;
 
-    my $session = POE::Session->create(
-        inline_states => _states($package),
-    );
+    # Use object states
+    if (blessed $package) {
+        POE::Session->create(
+            object_states => [ $package => _states(blessed $package) ],
+        );
+    }
+
+    # Use package states
+    else {
+        POE::Session->create(
+            package_states => [ $package => _states($package) ],
+        );
+    }
 }
 
 =head1 TODO

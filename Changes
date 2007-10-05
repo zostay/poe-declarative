@@ -1,5 +1,10 @@
 Revision history for Perl module POE::Declarative
 
+0.002 Fri Oct 5 11:43:04 2007
+    * Switched from using inline_states to package_states or object_states
+      depending on whether a package or object is passed to setup().
+    * Added t/object-states.t to test object states.
+
 0.001 Mon Oct 1 21:44:00 2007
     * Initial release.
     * Added the POE::Declarative module with get(), call(), delay(), post(),
