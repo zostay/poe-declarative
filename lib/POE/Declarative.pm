@@ -209,7 +209,7 @@ sub yield($;@) {
 
 The setup methods setup your session and such and generally get your session read for the POE kernel to do its thing.
 
-=head2 setup [ CLASS ]
+=head2 setup [ CLASS [ , HEAP ] ]
 
 Typically, this is called via:
 
@@ -223,6 +223,8 @@ And finally, the third form is to pass a blessed reference of that class in, whi
 
   my $flabby_bo = MyPOEApp::Component::FlabbyBo->new;
   POE::Declarative->setup($flabby_bo);
+
+You may also specify a second argument that will be used to setup the L<POE::Session> heap. If not given, the C<HEAP> argument defaults to an empty hash reference.
 
 =cut
 
@@ -248,12 +250,13 @@ sub setup {
     unshift @_, $class if defined $class and $class ne __PACKAGE__;
 
     my $package = shift || caller;
+    my $heap    = shift || {};
 
     # Use object states
     if (blessed $package) {
         POE::Session->create(
             object_states => [ $package => _states(blessed $package) ],
-            heap => {},
+            heap => $heap,
         );
     }
 
@@ -261,7 +264,7 @@ sub setup {
     else {
         POE::Session->create(
             package_states => [ $package => _states($package) ],
-            heap => {},
+            heap => $heap,
         );
     }
 }
