@@ -1,6 +1,9 @@
 Revision history for Perl module POE::Declarative
 
-0.003 Fri oct 5 13:58:43 2007
+0.004 Sat Oct 6 12:34:54 2007
+    * Adding the ability to setup a custom heap.
+
+0.003 Fri Oct 5 13:58:43 2007
     * Fixed the MANIFEST which failed to include t/object-states.t from the
       previous release.
     * Added a default heap -> {}

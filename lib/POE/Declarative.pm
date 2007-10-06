@@ -3,7 +3,7 @@ use warnings;
 
 package POE::Declarative;
 
-our $VERSION = '0.003';
+our $VERSION = '0.004';
 
 require Exporter;
 our @ISA = qw( Exporter );
