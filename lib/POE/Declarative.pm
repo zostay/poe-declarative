@@ -3,12 +3,13 @@ use warnings;
 
 package POE::Declarative;
 
-our $VERSION = '0.004';
+our $VERSION = '0.005';
 
 require Exporter;
 our @ISA = qw( Exporter );
 
 use Carp;
+use POE;
 use Scalar::Util qw/ blessed reftype /;
 
 our @EXPORT = qw(
@@ -73,11 +74,15 @@ or:
 
   on _start => \&_start_handler;
 
+=head3 MULTIPLE STATES FOR A SINGLE HANDLER
+
 You can also specify multiple states for a single subroutine:
 
   on [ 'say', 'yell', 'whisper' ] => run { ... };
 
 This has the same behavior as setting the same subroutine for each of these individually.
+
+=head3 STATE HANDLER METHODS
 
 Each state is also placed as a method within the current package. This method will be prefixed with "_poe_declarative_" to keep it from conflicting with any other methdos you've defined. So, you can define:
 
@@ -86,6 +91,47 @@ Each state is also placed as a method within the current package. This method wi
   on _start => \&_start;
 
 This will then result in an additional method named "C<_poe_declarative__start>" being added to your package. These method names are then passed as state handlers to the L<POE::Session>.
+
+=head3 MULTIPLE HANDLERS PER STATE
+
+You may have multiple handlers for each state with L<POE::Declarative>. If you have two calls to C<on()> for the same state name, both of those handlers will be run when that state is entered by L<POE>. If you are using L<POE::Declarative::Mixin> your mixin classes and your main class may all define a handler for a given state and all handlers will be run. 
+
+  package X;
+  use base qw/ POE::Declarative::Mixin /;
+
+  use POE::Declarative;
+
+  on foo => run { print "X" };
+
+  package Y;
+  use base qw/ POE::Declarative::Mixin /;
+
+  use POE::Declarative;
+
+  on foo => run { print "Y" };
+
+  package Z;
+  use POE::Declarative;
+  use X;
+  use Y;
+
+  on foo => run { print "Z\n" };
+  on _start => run { yield 'foo' };
+
+  POE::Declarative->setup;
+  POE::Kernel->run;
+
+In the example above, the output could be:
+
+  XYZ
+
+The order multiple handlers will run in is not (as of this writing) completely explicit. However, the primary package's handlers will be run last after all mixins have run. Also, the order the handlers is defined within a package will be preserved. Thus, if you define two handlers for the same state within the same package, the one defined first will be run first and the one defined second will be run second.
+
+Because of these, the output from the previous example might also be:
+
+ YXZ
+
+If you use L</call> to synchronously activate a state and use the return value. It will be set to the return value of the last handler run in the main package.
 
 =cut
 
@@ -96,19 +142,18 @@ sub on($$) {
     croak qq{"on" expects a code reference as the second argument, found $code instead}
         unless ref $code eq 'CODE';
 
-    my $package = caller;
-    my $states  = _states();
+    my $package  = caller;
 
     # Using on [ qw/ x y z / ] => ... syntax
     if (ref $state and reftype $state eq 'ARRAY') {
         for my $individual_state (@$state) {
-            _declare_method($package, $individual_state, $code, $states);
+            _declare_method($package, $individual_state, $code);
         }
     }
 
-    # Using on [ x ] => ... syntax
+    # Using on x => ... syntax
     else {
-        _declare_method($package, $state, $code, $states);
+        _declare_method($package, $state, $code);
     }
 }
 
@@ -116,13 +161,43 @@ sub _declare_method {
     my $package = shift;
     my $state   = shift;
     my $code    = shift;
-    my $states  = shift;
+
+    my $states   = _states($package);
+    my $handlers = _handlers($package);
 
     my $method = '_poe_declarative_' . $state;
     $states->{ $state } = $method;
+    push @{ $handlers->{ $state }{ $package } }, $code;
 
-    no strict 'refs';
-    *{ $package . '::' . $method } = sub { _args($package, @_); $code->(@_) };
+    {
+        no strict 'refs';
+        no warnings 'redefine';
+        *{ $package . '::' . $method } = sub { 
+            _args(@_); 
+            _handle_state(@_);
+        };
+    }
+}
+
+sub _handle_state {
+    my $self     = $_[OBJECT];
+    my $state    = $_[STATE];
+    my $package  = ref $self || $self;
+
+    my $all_handlers = _handlers($package);
+    my $my_handlers  = $all_handlers->{ $state };
+
+    my @handler_packages 
+        = sort { $a eq $package ?  1 # put this package at the end
+               : $b eq $package ? -1
+               :                   0 } keys %$my_handlers;
+    for my $handler_package (@handler_packages) {
+        my $codes = $my_handlers->{ $handler_package };
+
+        for my $code (@$codes) {
+            $code->(@_);
+        }
+    }
 }
 
 =head2 run CODE
@@ -162,7 +237,7 @@ If you don't like C<get>, don't use it. As I said, the code above will run exact
 sub get($) {
     my $pos = shift;
     my $package = caller;
-    return _args($package)->[ $pos ];
+    return _args()->[ $pos ];
 }
 
 =head2 call SESSION, STATE, ARGS
@@ -228,20 +303,24 @@ You may also specify a second argument that will be used to setup the L<POE::Ses
 
 =cut
 
+our $_POE_DECLARATIVE_ARGS;
 sub _args {
-    my $package = shift;
-    my $args_var = $package . '::POE_ARGS';
+    $_POE_DECLARATIVE_ARGS = [ @_ ] if scalar(@_) > 0;
+    return $_POE_DECLARATIVE_ARGS || [];
+}
+
+sub _handlers {
+    my $package = shift || caller(1);
 
     no strict 'refs';
-    ${ $args_var } = [ @_ ] if scalar(@_) > 0;
-    return ${ $args_var } || [];
+    return scalar (${ $package . '::_POE_DECLARATIVE_HANDLERS' } ||= {});
 }
 
 sub _states {
     my $package = shift || caller(1);
 
     no strict 'refs';
-    return scalar (${ $package . '::STATES' } ||= {});
+    return scalar (${ $package . '::_POE_DECLARATIVE_STATES' } ||= {});
 }
 
 sub setup {

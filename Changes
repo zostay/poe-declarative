@@ -1,5 +1,9 @@
 Revision history for Perl module POE::Declarative
 
+0.005 Sun Oct 7 16:53:43 2007
+    * Added support for having multiple handlers for the same state.
+    * Added t/multiple-handlers.t to test the new multiple handler feature.
+
 0.004 Sat Oct 6 12:34:54 2007
     * Adding the ability to setup a custom heap.
 

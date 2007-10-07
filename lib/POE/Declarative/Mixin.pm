@@ -3,6 +3,8 @@ use warnings;
 
 package POE::Declarative::Mixin;
 
+use POE::Declarative ();
+
 =head1 NAME
 
 POE::Declarative::Mixin - use different declarative POE packages together
@@ -89,28 +91,13 @@ sub export_poe_declarative_to_level {
     my $level   = shift || 1;
     my $package = caller($level);
 
-    # Pull the $STATES var from this package into the calling package
-    my $their_states_var = $package . '::STATES';
-    my $my_states_var    = $class   . '::STATES';
+    my $states   = POE::Declarative::_states($class);
+    my $handlers = POE::Declarative::_handlers($class);
 
-    # Initialize the references
-    my ($their_states, $my_states);
-    {
-        no strict 'refs';
-        $their_states = ${ $their_states_var } ||= {};
-        $my_states    = ${ $my_states_var }    ||= {};
-    }
-
-    # For each state in this class, update the states in the caller
-    for my $my_state (keys %$my_states) {
-        my $method = $my_states->{ $my_state };
-
-        # Setup the actual state
-        $their_states->{ $my_state } = $method;
-
-        # Define the method that needs to run on that state
-        no strict 'refs';
-        *{ $package . '::' . $method } = *{ $class . '::' . $method };
+    for my $state (keys %$states) {
+        for my $code (@{ $handlers->{ $state }{ $class } }) {
+            POE::Declarative::_declare_method($package, $state, $code);
+        }
     }
 }
 
