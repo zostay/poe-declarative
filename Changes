@@ -1,5 +1,10 @@
 Revision history for Perl module POE::Declarative
 
+0.006 Sun Oct 7 21:29:22 2007
+    * Added t/call-returns.t to reveal a problem with capturing return values
+      from handlers that have been call()ed.
+    * Fixed _handle_states() to return results correctly.
+
 0.005 Sun Oct 7 16:53:43 2007
     * Added support for having multiple handlers for the same state.
     * Added t/multiple-handlers.t to test the new multiple handler feature.
