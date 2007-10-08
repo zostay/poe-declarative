@@ -13,10 +13,12 @@ Makefile.PL
 MANIFEST			This list of files
 META.yml
 t/basic.t
+t/custom-heap.t
 t/lib/TestConsumer.pm
 t/lib/TestProducer.pm
 t/lib/TestProducerConsumer.pm
 t/mixins.t
+t/multiple-handlers.t
 t/object-states.t
 t/on-array.t
 t/passing-args.t

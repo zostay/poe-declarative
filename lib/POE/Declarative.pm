@@ -3,7 +3,7 @@ use warnings;
 
 package POE::Declarative;
 
-our $VERSION = '0.005';
+our $VERSION = '0.006';
 
 require Exporter;
 our @ISA = qw( Exporter );
@@ -187,6 +187,7 @@ sub _handle_state {
     my $all_handlers = _handlers($package);
     my $my_handlers  = $all_handlers->{ $state };
 
+    my ($result, @result);
     my @handler_packages 
         = sort { $a eq $package ?  1 # put this package at the end
                : $b eq $package ? -1
@@ -195,9 +196,19 @@ sub _handle_state {
         my $codes = $my_handlers->{ $handler_package };
 
         for my $code (@$codes) {
-            $code->(@_);
+            if (wantarray) {
+                @result = $code->(@_);
+            }
+            elsif (defined wantarray) {
+                $result = $code->(@_);
+            }
+            else {
+                $code->(@_);
+            }
         }
     }
+
+    return wantarray ? @result : $result;
 }
 
 =head2 run CODE
