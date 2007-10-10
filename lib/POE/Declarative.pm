@@ -267,7 +267,7 @@ This is just a shorthand for L<POE::Kernel/delay>.
 
 =cut
 
-sub delay($$;@) {
+sub delay($;$@) {
     POE::Kernel->delay( @_ );
 }
 

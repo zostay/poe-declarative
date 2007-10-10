@@ -4,6 +4,9 @@ Revision history for Perl module POE::Declarative
     * Added t/call-returns.t to reveal a problem with capturing return values
       from handlers that have been call()ed.
     * Fixed _handle_states() to return results correctly.
+    * Added t/delay.t to reveal a problem with delay(), it won't accept the
+      short syntax for canceling delayed states.
+    * Fixed the prototype for delay() so that it can take a single argument.
 
 0.005 Sun Oct 7 16:53:43 2007
     * Added support for having multiple handlers for the same state.
