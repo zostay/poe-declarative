@@ -15,6 +15,7 @@ META.yml
 t/basic.t
 t/call-returns.t
 t/custom-heap.t
+t/delay.t
 t/lib/TestConsumer.pm
 t/lib/TestProducer.pm
 t/lib/TestProducerConsumer.pm
