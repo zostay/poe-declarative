@@ -3,7 +3,7 @@ use warnings;
 
 package POE::Declarative;
 
-our $VERSION = '0.006';
+our $VERSION = '0.007';
 
 require Exporter;
 our @ISA = qw( Exporter );
@@ -176,6 +176,14 @@ sub _declare_method {
             _args(@_); 
             _handle_state(@_);
         };
+    }
+
+    # Check if the system is running or not
+    my $session = POE::Kernel->get_active_session;
+
+    # We're in an active session, make sure the kernel is updated
+    unless ($session->isa('POE::Kernel')) {
+        POE::Kernel->state($state, $package, $method);
     }
 }
 
