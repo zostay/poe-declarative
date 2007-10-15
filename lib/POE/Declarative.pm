@@ -400,15 +400,9 @@ sub setup {
     }
 }
 
-=head1 TODO
-
-Lots and lots as of this writing. It doesn't handle much of the useful features of POE. I haven't tested it with other components. I haven't tested or made sure this properly supports inheritance.
-
-There's probably more that I haven't thought of yet.
-
 =head1 NONSENSE WORDS
 
-My examples in this module feature some of my favorite nonsense words. I've picked up quite a few of them having a small child.
+My examples in this module feature some of my favorite nonsense words. I've picked up quite a few of them since my son has started learning to talk.
 
 =head1 SEE ALSO
 
