@@ -1,5 +1,26 @@
 Revision history for Perl module POE::Declarative
 
+0.08 Sun Oct 14 23:14:27 2007
+    * Getting rid of an extra zero in the verion numbering scheme that was
+      bugging me. I was real tired when I made that decision.
+    * Added t/dynamic-late-mixin-states.t test to reveal some loop-holes in the
+      way mixins work.
+    * Added t/lib/CrazyMixin.pm to help t/dynamic-late-mixin-states.t.
+    * Fixed a problem where "dynamic" state handlers created within in a state
+      using handlers declared in a mixin would end up associated with the mixin
+      package rather than the package the handler had been imported into.
+    * Fixed a problem where a helper subroutine associated with a mixin might be
+      used to create additional per-package handlers after import() is called,
+      but before POE::Kernel->run(). In such cases, the states were mucking up
+      the mixin's main state table (which would have weird side-effects if you
+      declared multiple sessions in a single process using the same mixin and
+      called the helper sub) and were never associated with the calling package.
+      See the count() method in t/lib/CrazyMixin.pm and it's use in
+      t/dynamic-late-mixin-states.t for an example of this situation.
+    * The solution of that last fix uses some deep magic whereby the on() method
+      of POE::Declarative does some call-stack searching to try to
+      Do-What-You-Mean in such cases.
+
 0.007 Sun Oct 14 17:22::28 2007
     * Added t/late-handler.t to test the ability of POE::Declare to declare a
       handler late (after POE::Kernel->run has been called).

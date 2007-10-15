@@ -3,7 +3,7 @@ use warnings;
 
 package POE::Declarative;
 
-our $VERSION = '0.007';
+our $VERSION = '0.08';
 
 require Exporter;
 our @ISA = qw( Exporter );
@@ -136,13 +136,48 @@ If you use L</call> to synchronously activate a state and use the return value. 
 =cut
 
 sub on($$) {
-    my $state   = shift;
-    my $code    = shift;
+    my $state = shift;
+    my $code  = shift;
 
-    croak qq{"on" expects a code reference as the second argument, found $code instead}
-        unless ref $code eq 'CODE';
+    croak qq{"on" expects a code reference as the second argument, }
+         .qq{found $code instead} 
+            unless ref $code and reftype $code eq 'CODE';
 
-    my $package  = caller;
+    my $session = POE::Kernel->get_active_session;
+    my $package;
+
+    # The kernel is not yet running/not in an active session
+    if ($session->isa('POE::Kernel')) {
+
+        # Normally, the caller is good enough
+        $package = caller;
+
+        # DEEP MAGIC!!! BEWARE OF THE DWIMMERY!!!
+        #
+        # However, if we're in a mixin declaring a state using some sort of
+        # fancy helper subroutine, we need to try and put that declared state
+        # into the calling class not in the mixin where it fouls the mixin's
+        # declaration and doesn't make it into the session configuration
+        # properly. See t/dynamic-late-mixin-states.t for an example of the
+        # kind of situation where this comes up.
+        my $caller = 1;
+        while (defined $package && $package->isa('POE::Declarative::Mixin')) {
+            $package = caller($caller++);
+        }
+
+        # Fallback position in case we get confused
+        $package = caller unless defined $package;
+    }
+
+    # The POE kernel is running and in a session
+    else {
+        # Try to guess the package from the session if in a POE::Declarative
+        # handler, or fallback to the caller if not, which may be bad. By using
+        # the state's OBJECT, this should magically handle this work in mixins
+        # as well!
+        my $object = get(OBJECT) || caller;
+        $package = ref $object || $object;
+    }
 
     # Using on [ qw/ x y z / ] => ... syntax
     if (ref $state and reftype $state eq 'ARRAY') {
