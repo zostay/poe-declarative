@@ -400,10 +400,6 @@ sub setup {
     }
 }
 
-=head1 NONSENSE WORDS
-
-My examples in this module feature some of my favorite nonsense words. I've picked up quite a few of them since my son has started learning to talk.
-
 =head1 SEE ALSO
 
 L<POE>
