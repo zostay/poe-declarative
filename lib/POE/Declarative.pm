@@ -50,8 +50,6 @@ POE::Declarative - write POE applications without the mess
 
 Taking the lessons learned from writing dispatchers and templates in L<Jifty> and L<Template::Declare>, I've applied the same declarative language to L<POE>. The goal is to make writing a POE application less painful so that I can concentrate on the more important aspects of my programming.
 
-This module is still B<VERY EXPERIMENTAL>. I just wrote it this evening and it needs lots of work.
-
 =head1 DECLARATIONS
 
 =head2 on STATE => CODE
