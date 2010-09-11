@@ -1,6 +1,8 @@
 Revision history for Perl module POE::Declarative
 
-0.09
+0.09 Sat Sep 11 11:43:33 2010
+    * Moved to using Dist::Zilla for releases
+    * Fixed the t/call-returns.t test, which fails on later versions of POE
     * Cleaned up some of the old notes in the POD.
 
 0.08 Sun Oct 14 23:14:27 2007
